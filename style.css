@@ -1,0 +1,199 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    overflow: hidden;
+    color: #ff0000;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    background: #000;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    color: #00ff00;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 10;
+    text-shadow: 2px 2px 4px #000;
+}
+
+.hud-section {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hud-section.center {
+    align-items: center;
+}
+
+.hud-item {
+    color: #ffff00;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.hud-item span {
+    color: #00ff00;
+    margin-left: 5px;
+}
+
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+#crosshair::before,
+#crosshair::after {
+    content: '';
+    position: absolute;
+    background: #00ff00;
+}
+
+#crosshair::before {
+    width: 2px;
+    height: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#crosshair::after {
+    height: 2px;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Menu Screens */
+.menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 4px solid #ff0000;
+    padding: 50px;
+    text-align: center;
+    z-index: 100;
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+}
+
+.menu.hidden {
+    display: none;
+}
+
+.menu h1 {
+    font-size: 48px;
+    color: #ff0000;
+    margin-bottom: 20px;
+    text-shadow: 4px 4px 8px #000;
+    letter-spacing: 4px;
+}
+
+.menu .subtitle {
+    font-size: 16px;
+    color: #ffff00;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+}
+
+.controls-info {
+    background: rgba(255, 0, 0, 0.1);
+    border: 2px solid #ff0000;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.controls-info h2 {
+    color: #ffff00;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.controls-info p {
+    color: #00ff00;
+    font-size: 16px;
+    margin: 8px 0;
+    letter-spacing: 1px;
+}
+
+.menu-btn {
+    background: #ff0000;
+    color: #000;
+    border: none;
+    padding: 15px 40px;
+    font-size: 20px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #800000;
+}
+
+.menu-btn:hover {
+    background: #ffff00;
+    color: #000;
+    box-shadow: 0 4px 0 #808000;
+    transform: translateY(-2px);
+}
+
+.menu-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #800000;
+}
+
+.final-stats {
+    font-size: 20px;
+    color: #00ff00;
+    margin: 15px 0;
+    letter-spacing: 2px;
+}
+
+.final-stats span {
+    color: #ffff00;
+    font-size: 24px;
+}
+
+/* Damage flash effect */
+@keyframes damage-flash {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(255, 0, 0, 0.5); }
+}
+
+.damage-flash {
+    animation: damage-flash 0.3s;
+}
