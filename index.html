@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM Clone - Retro FPS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud">
+            <div class="hud-section">
+                <div class="hud-item">HEALTH: <span id="health">100</span></div>
+                <div class="hud-item">AMMO: <span id="ammo">∞</span></div>
+            </div>
+            <div class="hud-section center">
+                <div class="hud-item">STAGE: <span id="stage">1</span></div>
+                <div class="hud-item">KILLS: <span id="kills">0</span></div>
+            </div>
+            <div class="hud-section">
+                <div class="hud-item">ENEMIES: <span id="enemies">0</span></div>
+                <div class="hud-item">SCORE: <span id="score">0</span></div>
+            </div>
+        </div>
+        
+        <div id="crosshair"></div>
+        
+        <div id="menu" class="menu">
+            <h1>DOOM CLONE</h1>
+            <p class="subtitle">Retro First Person Shooter</p>
+            <div class="controls-info">
+                <h2>CONTROLS</h2>
+                <p>↑ ↓ ← → : Move</p>
+                <p>SPACE : Jump</p>
+                <p>A : Shoot</p>
+                <p>ESC : Pause</p>
+            </div>
+            <button id="start-btn" class="menu-btn">START GAME</button>
+        </div>
+        
+        <div id="pause-menu" class="menu hidden">
+            <h1>PAUSED</h1>
+            <button id="resume-btn" class="menu-btn">RESUME</button>
+            <button id="restart-btn" class="menu-btn">RESTART</button>
+        </div>
+        
+        <div id="game-over" class="menu hidden">
+            <h1>GAME OVER</h1>
+            <p class="final-stats">Final Score: <span id="final-score">0</span></p>
+            <p class="final-stats">Stages Completed: <span id="final-stage">0</span></p>
+            <button id="retry-btn" class="menu-btn">TRY AGAIN</button>
+        </div>
+        
+        <div id="stage-complete" class="menu hidden">
+            <h1>STAGE COMPLETE!</h1>
+            <p class="final-stats">Score: <span id="stage-score">0</span></p>
+            <button id="next-stage-btn" class="menu-btn">NEXT STAGE</button>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
