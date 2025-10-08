@@ -218,7 +218,7 @@ function spawnEnemies(grid, stage) {
     const mapSize = grid.length;
     const cellSize = Game.cellSize;
     
-    const enemyGeometry = new THREE.BoxGeometry(1.5, 2, 1.5);
+    const enemyGeometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
     const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
     
     for (let e = 0; e < enemyCount; e++) {
@@ -245,10 +245,13 @@ function spawnEnemies(grid, stage) {
         const enemy = {
             mesh: enemyMesh,
             health: 50 + stage * 10,
+            maxHealth: 50 + stage * 10,
             speed: 0.02 + stage * 0.005,
             damage: 10 + stage * 2,
             lastAttack: 0,
-            attackCooldown: 1000
+            attackCooldown: 1000,
+            originalColor: 0xff0000,
+            damageFlashTime: 0
         };
         
         Game.scene.add(enemyMesh);
@@ -464,6 +467,43 @@ function shoot() {
     Game.projectiles.push(projectileData);
 }
 
+// Create hit effect particles
+function createHitEffect(position) {
+    const particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+    const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    
+    for (let i = 0; i < 8; i++) {
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.position.copy(position);
+        
+        const angle = (Math.PI * 2 * i) / 8;
+        const speed = 0.2;
+        const velocity = new THREE.Vector3(
+            Math.cos(angle) * speed,
+            Math.random() * speed,
+            Math.sin(angle) * speed
+        );
+        
+        Game.scene.add(particle);
+        
+        // Remove particle after short time
+        setTimeout(() => {
+            Game.scene.remove(particle);
+        }, 200);
+        
+        // Animate particle
+        const startTime = Date.now();
+        const animateParticle = () => {
+            if (Date.now() - startTime < 200) {
+                particle.position.add(velocity);
+                velocity.y -= 0.02;
+                requestAnimationFrame(animateParticle);
+            }
+        };
+        animateParticle();
+    }
+}
+
 // Update enemies
 function updateEnemies() {
     if (Game.isPaused || Game.isGameOver) return;
@@ -472,6 +512,20 @@ function updateEnemies() {
     
     for (let i = 0; i < Game.enemies.length; i++) {
         const enemy = Game.enemies[i];
+        
+        // Restore color after damage flash
+        if (enemy.damageFlashTime > 0 && Date.now() - enemy.damageFlashTime > 100) {
+            const healthPercent = enemy.health / enemy.maxHealth;
+            // Color transitions from red -> orange -> yellow as health decreases
+            if (healthPercent > 0.6) {
+                enemy.mesh.material.color.setHex(0xff0000);
+            } else if (healthPercent > 0.3) {
+                enemy.mesh.material.color.setHex(0xff6600);
+            } else {
+                enemy.mesh.material.color.setHex(0xff9900);
+            }
+            enemy.damageFlashTime = 0;
+        }
         
         // Move towards player
         const direction = new THREE.Vector3();
@@ -483,7 +537,7 @@ function updateEnemies() {
         newPos.add(direction.multiplyScalar(enemy.speed));
         
         // Check collision with walls before moving
-        const enemyRadius = 0.75;
+        const enemyRadius = 1.25;
         let canMove = true;
         
         for (const wall of Game.walls) {
@@ -504,7 +558,7 @@ function updateEnemies() {
         
         // Attack player if close
         const distance = enemy.mesh.position.distanceTo(Game.camera.position);
-        if (distance < 2 && Date.now() - enemy.lastAttack > enemy.attackCooldown) {
+        if (distance < 3 && Date.now() - enemy.lastAttack > enemy.attackCooldown) {
             Game.player.health -= enemy.damage;
             enemy.lastAttack = Date.now();
             
@@ -568,9 +622,17 @@ function updateProjectiles() {
         let hitEnemy = false;
         for (const enemy of Game.enemies) {
             const distance = proj.mesh.position.distanceTo(enemy.mesh.position);
-            if (distance < 1) {
+            if (distance < 2.5) {
                 enemy.health -= 25;
                 hitEnemy = true;
+                
+                // Flash white when hit
+                enemy.mesh.material.color.setHex(0xffffff);
+                enemy.damageFlashTime = Date.now();
+                
+                // Create hit particle effect
+                createHitEffect(enemy.mesh.position);
+                
                 break;
             }
         }
