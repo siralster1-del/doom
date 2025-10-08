@@ -219,7 +219,6 @@ function spawnEnemies(grid, stage) {
     const cellSize = Game.cellSize;
     
     const enemyGeometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-    const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
     
     for (let e = 0; e < enemyCount; e++) {
         let x, z, attempts = 0;
@@ -239,6 +238,8 @@ function spawnEnemies(grid, stage) {
         
         if (attempts >= 100) continue;
         
+        // Create unique material for each enemy so they can have independent colors
+        const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
         const enemyMesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
         enemyMesh.position.set(x, 1, z);
         
