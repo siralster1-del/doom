@@ -218,8 +218,6 @@ function spawnEnemies(grid, stage) {
     const mapSize = grid.length;
     const cellSize = Game.cellSize;
     
-    const enemyGeometry = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-    
     for (let e = 0; e < enemyCount; e++) {
         let x, z, attempts = 0;
         
@@ -238,24 +236,67 @@ function spawnEnemies(grid, stage) {
         
         if (attempts >= 100) continue;
         
-        // Create unique material for each enemy so they can have independent colors
-        const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-        const enemyMesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
-        enemyMesh.position.set(x, 1, z);
+        // Create Minecraft-style zombie with unique materials
+        const zombieGroup = new THREE.Group();
+        
+        // Zombie green color
+        const zombieMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x00aa00,
+            flatShading: true 
+        });
+        
+        // Head (cube)
+        const headGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const head = new THREE.Mesh(headGeometry, zombieMaterial);
+        head.position.y = 1.4;
+        zombieGroup.add(head);
+        
+        // Body (rectangular)
+        const bodyGeometry = new THREE.BoxGeometry(0.8, 1.2, 0.4);
+        const body = new THREE.Mesh(bodyGeometry, zombieMaterial);
+        body.position.y = 0.6;
+        zombieGroup.add(body);
+        
+        // Left arm
+        const armGeometry = new THREE.BoxGeometry(0.3, 1.0, 0.3);
+        const leftArm = new THREE.Mesh(armGeometry, zombieMaterial);
+        leftArm.position.set(-0.55, 0.7, 0);
+        leftArm.rotation.z = 0.5;
+        zombieGroup.add(leftArm);
+        
+        // Right arm
+        const rightArm = new THREE.Mesh(armGeometry, zombieMaterial);
+        rightArm.position.set(0.55, 0.7, 0);
+        rightArm.rotation.z = -0.5;
+        zombieGroup.add(rightArm);
+        
+        // Left leg
+        const legGeometry = new THREE.BoxGeometry(0.3, 0.6, 0.3);
+        const leftLeg = new THREE.Mesh(legGeometry, zombieMaterial);
+        leftLeg.position.set(-0.25, -0.3, 0);
+        zombieGroup.add(leftLeg);
+        
+        // Right leg
+        const rightLeg = new THREE.Mesh(legGeometry, zombieMaterial);
+        rightLeg.position.set(0.25, -0.3, 0);
+        zombieGroup.add(rightLeg);
+        
+        zombieGroup.position.set(x, 1, z);
         
         const enemy = {
-            mesh: enemyMesh,
+            mesh: zombieGroup,
+            material: zombieMaterial,
             health: 50 + stage * 10,
             maxHealth: 50 + stage * 10,
             speed: 0.02 + stage * 0.005,
             damage: 10 + stage * 2,
             lastAttack: 0,
             attackCooldown: 1000,
-            originalColor: 0xff0000,
+            originalColor: 0x00aa00,
             damageFlashTime: 0
         };
         
-        Game.scene.add(enemyMesh);
+        Game.scene.add(zombieGroup);
         Game.enemies.push(enemy);
     }
     
@@ -517,13 +558,13 @@ function updateEnemies() {
         // Restore color after damage flash
         if (enemy.damageFlashTime > 0 && Date.now() - enemy.damageFlashTime > 100) {
             const healthPercent = enemy.health / enemy.maxHealth;
-            // Color transitions from red -> orange -> yellow as health decreases
+            // Color transitions from green -> yellow -> red as health decreases
             if (healthPercent > 0.6) {
-                enemy.mesh.material.color.setHex(0xff0000);
+                enemy.material.color.setHex(0x00aa00); // Green
             } else if (healthPercent > 0.3) {
-                enemy.mesh.material.color.setHex(0xff6600);
+                enemy.material.color.setHex(0x88aa00); // Yellow-green
             } else {
-                enemy.mesh.material.color.setHex(0xff9900);
+                enemy.material.color.setHex(0xaaaa00); // Yellow (low health)
             }
             enemy.damageFlashTime = 0;
         }
@@ -628,7 +669,7 @@ function updateProjectiles() {
                 hitEnemy = true;
                 
                 // Flash white when hit
-                enemy.mesh.material.color.setHex(0xffffff);
+                enemy.material.color.setHex(0xffffff);
                 enemy.damageFlashTime = Date.now();
                 
                 // Create hit particle effect
