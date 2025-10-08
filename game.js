@@ -21,10 +21,10 @@ const Game = {
     score: 0,
     isPaused: false,
     isGameOver: false,
-    mapSize: 20,
+    mapSize: 60,
     cellSize: 4,
-    enemiesPerStage: 5,
-    maxEnemies: 10
+    enemiesPerStage: 20,
+    maxEnemies: 40
 };
 
 // Input state
@@ -39,7 +39,7 @@ const Input = {
 function init() {
     // Create scene
     Game.scene = new THREE.Scene();
-    Game.scene.fog = new THREE.Fog(0x000000, 0, 50);
+    Game.scene.fog = new THREE.Fog(0x333333, 0, 150);
     
     // Create camera
     Game.camera = new THREE.PerspectiveCamera(
@@ -53,16 +53,25 @@ function init() {
     // Create renderer
     Game.renderer = new THREE.WebGLRenderer({ antialias: false });
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
-    Game.renderer.setClearColor(0x111111);
+    Game.renderer.setClearColor(0x444444);
     document.getElementById('game-container').appendChild(Game.renderer.domElement);
     
     // Add lights
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     Game.scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xff0000, 0.5);
-    directionalLight.position.set(0, 10, 0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 50, 0);
     Game.scene.add(directionalLight);
+    
+    // Add additional point lights for better illumination
+    const pointLight1 = new THREE.PointLight(0xff8844, 0.5, 100);
+    pointLight1.position.set(20, 10, 20);
+    Game.scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0xff4444, 0.5, 100);
+    pointLight2.position.set(-20, 10, -20);
+    Game.scene.add(pointLight2);
     
     // Setup event listeners
     setupEventListeners();
@@ -82,50 +91,74 @@ function generateMap(stage) {
     if (Game.floor) Game.scene.remove(Game.floor);
     if (Game.ceiling) Game.scene.remove(Game.ceiling);
     
-    const mapSize = Game.mapSize + stage * 2;
+    const mapSize = Game.mapSize + stage * 3;
     const cellSize = Game.cellSize;
     
-    // Create maze grid
+    // Create open world grid - start with all empty
     const grid = [];
     for (let i = 0; i < mapSize; i++) {
         grid[i] = [];
         for (let j = 0; j < mapSize; j++) {
-            grid[i][j] = 1; // 1 = wall, 0 = empty
+            grid[i][j] = 0; // 0 = empty, 1 = wall
         }
     }
     
-    // Recursive backtracking maze generation
-    function carvePath(x, y) {
-        grid[x][y] = 0;
+    // Add perimeter walls
+    for (let i = 0; i < mapSize; i++) {
+        grid[i][0] = 1;
+        grid[i][mapSize - 1] = 1;
+        grid[0][i] = 1;
+        grid[mapSize - 1][i] = 1;
+    }
+    
+    // Add random buildings and structures for cover
+    const numStructures = 15 + stage * 3;
+    for (let s = 0; s < numStructures; s++) {
+        const structureType = Math.floor(Math.random() * 3);
+        const centerX = Math.floor(Math.random() * (mapSize - 10)) + 5;
+        const centerY = Math.floor(Math.random() * (mapSize - 10)) + 5;
         
-        const directions = [
-            [0, 2], [2, 0], [0, -2], [-2, 0]
-        ].sort(() => Math.random() - 0.5);
-        
-        for (const [dx, dy] of directions) {
-            const nx = x + dx;
-            const ny = y + dy;
-            
-            if (nx > 0 && nx < mapSize - 1 && ny > 0 && ny < mapSize - 1 && grid[nx][ny] === 1) {
-                grid[x + dx / 2][y + dy / 2] = 0;
-                carvePath(nx, ny);
+        if (structureType === 0) {
+            // Square building
+            const size = Math.floor(Math.random() * 3) + 2;
+            for (let dx = -size; dx <= size; dx++) {
+                for (let dy = -size; dy <= size; dy++) {
+                    if (Math.abs(dx) === size || Math.abs(dy) === size) {
+                        const x = centerX + dx;
+                        const y = centerY + dy;
+                        if (x > 0 && x < mapSize - 1 && y > 0 && y < mapSize - 1) {
+                            grid[x][y] = 1;
+                        }
+                    }
+                }
+            }
+        } else if (structureType === 1) {
+            // Wall segments
+            const length = Math.floor(Math.random() * 5) + 3;
+            const horizontal = Math.random() > 0.5;
+            for (let i = 0; i < length; i++) {
+                const x = horizontal ? centerX + i : centerX;
+                const y = horizontal ? centerY : centerY + i;
+                if (x > 0 && x < mapSize - 1 && y > 0 && y < mapSize - 1) {
+                    grid[x][y] = 1;
+                }
+            }
+        } else {
+            // Scattered pillars
+            const numPillars = Math.floor(Math.random() * 4) + 2;
+            for (let p = 0; p < numPillars; p++) {
+                const x = centerX + Math.floor(Math.random() * 6) - 3;
+                const y = centerY + Math.floor(Math.random() * 6) - 3;
+                if (x > 0 && x < mapSize - 1 && y > 0 && y < mapSize - 1) {
+                    grid[x][y] = 1;
+                }
             }
         }
     }
     
-    // Start carving from center
-    carvePath(1, 1);
-    
-    // Add some random openings for variety
-    for (let i = 0; i < mapSize * 2; i++) {
-        const x = Math.floor(Math.random() * (mapSize - 2)) + 1;
-        const y = Math.floor(Math.random() * (mapSize - 2)) + 1;
-        grid[x][y] = 0;
-    }
-    
     // Create walls from grid
     const wallMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x666666,
+        color: 0x888888,
         flatShading: true
     });
     
@@ -149,7 +182,7 @@ function generateMap(stage) {
     // Create floor
     const floorGeometry = new THREE.PlaneGeometry(mapSize * cellSize, mapSize * cellSize);
     const floorMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x333333,
+        color: 0x666666,
         flatShading: true
     });
     Game.floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -159,7 +192,7 @@ function generateMap(stage) {
     
     // Create ceiling
     const ceilingMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x1a1a1a,
+        color: 0x555555,
         flatShading: true
     });
     Game.ceiling = new THREE.Mesh(floorGeometry, ceilingMaterial);
@@ -167,17 +200,10 @@ function generateMap(stage) {
     Game.ceiling.position.y = cellSize;
     Game.scene.add(Game.ceiling);
     
-    // Set player position in an open area
-    for (let i = 1; i < mapSize - 1; i++) {
-        for (let j = 1; j < mapSize - 1; j++) {
-            if (grid[i][j] === 0) {
-                Game.camera.position.x = (i - mapSize / 2) * cellSize;
-                Game.camera.position.z = (j - mapSize / 2) * cellSize;
-                Game.camera.position.y = 2;
-                return grid;
-            }
-        }
-    }
+    // Set player position in center of map
+    Game.camera.position.x = 0;
+    Game.camera.position.z = 0;
+    Game.camera.position.y = 2;
     
     return grid;
 }
@@ -208,7 +234,7 @@ function spawnEnemies(grid, stage) {
         } while (
             attempts < 100 &&
             (grid[Math.floor(x / cellSize + mapSize / 2)]?.[Math.floor(z / cellSize + mapSize / 2)] === 1 ||
-            Game.camera.position.distanceTo(new THREE.Vector3(x, 1, z)) < 10)
+            Game.camera.position.distanceTo(new THREE.Vector3(x, 1, z)) < 20)
         );
         
         if (attempts >= 100) continue;
