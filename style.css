@@ -188,6 +188,23 @@ canvas {
     font-size: 24px;
 }
 
+/* Minimap */
+#minimap {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 250px;
+    height: 250px;
+    border: 3px solid #00ff00;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 15;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+}
+
+#minimap.hidden {
+    display: none;
+}
+
 /* Damage flash effect */
 @keyframes damage-flash {
     0%, 100% { background: transparent; }

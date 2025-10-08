@@ -24,7 +24,13 @@ const Game = {
     mapSize: 60,
     cellSize: 4,
     enemiesPerStage: 20,
-    maxEnemies: 40
+    maxEnemies: 40,
+    minimap: {
+        enabled: false,
+        canvas: null,
+        ctx: null,
+        grid: []
+    }
 };
 
 // Input state
@@ -72,6 +78,12 @@ function init() {
     const pointLight2 = new THREE.PointLight(0xff4444, 0.5, 100);
     pointLight2.position.set(-20, 10, -20);
     Game.scene.add(pointLight2);
+    
+    // Setup minimap
+    Game.minimap.canvas = document.getElementById('minimap');
+    Game.minimap.ctx = Game.minimap.canvas.getContext('2d');
+    Game.minimap.canvas.width = 250;
+    Game.minimap.canvas.height = 250;
     
     // Setup event listeners
     setupEventListeners();
@@ -310,6 +322,7 @@ function startStage(stageNumber) {
     Game.isGameOver = false;
     
     const grid = generateMap(stageNumber);
+    Game.minimap.grid = grid; // Store grid for minimap
     spawnEnemies(grid, stageNumber);
     
     updateHUD();
@@ -323,6 +336,10 @@ function setupEventListeners() {
         
         if (e.key.toLowerCase() === 'a') {
             Input.shoot = true;
+        }
+        
+        if (e.key.toLowerCase() === 'p') {
+            toggleMinimap();
         }
         
         if (e.key === 'Escape') {
@@ -382,6 +399,73 @@ function togglePause() {
     } else {
         pauseMenu.classList.add('hidden');
     }
+}
+
+// Toggle minimap
+function toggleMinimap() {
+    Game.minimap.enabled = !Game.minimap.enabled;
+    const minimapCanvas = document.getElementById('minimap');
+    
+    if (Game.minimap.enabled) {
+        minimapCanvas.classList.remove('hidden');
+    } else {
+        minimapCanvas.classList.add('hidden');
+    }
+}
+
+// Draw minimap
+function drawMinimap() {
+    if (!Game.minimap.enabled || !Game.minimap.ctx) return;
+    
+    const ctx = Game.minimap.ctx;
+    const canvas = Game.minimap.canvas;
+    const grid = Game.minimap.grid;
+    
+    if (!grid || grid.length === 0) return;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const mapSize = grid.length;
+    const cellSize = canvas.width / mapSize;
+    
+    // Draw walls
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
+    for (let i = 0; i < mapSize; i++) {
+        for (let j = 0; j < mapSize; j++) {
+            if (grid[i][j] === 1) {
+                ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+            }
+        }
+    }
+    
+    // Draw enemies
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+    for (const enemy of Game.enemies) {
+        const x = (enemy.mesh.position.x / Game.cellSize + mapSize / 2) * cellSize;
+        const z = (enemy.mesh.position.z / Game.cellSize + mapSize / 2) * cellSize;
+        ctx.beginPath();
+        ctx.arc(x, z, cellSize * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw player
+    ctx.fillStyle = 'rgba(0, 255, 0, 1)';
+    const playerX = (Game.camera.position.x / Game.cellSize + mapSize / 2) * cellSize;
+    const playerZ = (Game.camera.position.z / Game.cellSize + mapSize / 2) * cellSize;
+    ctx.beginPath();
+    ctx.arc(playerX, playerZ, cellSize * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw player direction indicator
+    const direction = new THREE.Vector3();
+    Game.camera.getWorldDirection(direction);
+    ctx.strokeStyle = 'rgba(0, 255, 0, 1)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(playerX, playerZ);
+    ctx.lineTo(playerX + direction.x * cellSize * 3, playerZ + direction.z * cellSize * 3);
+    ctx.stroke();
 }
 
 // Restart game
@@ -727,6 +811,8 @@ function animate() {
         updateEnemies();
         updateProjectiles();
     }
+    
+    drawMinimap();
     
     Game.renderer.render(Game.scene, Game.camera);
 }
